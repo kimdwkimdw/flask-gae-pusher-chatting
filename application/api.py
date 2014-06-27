@@ -2,11 +2,18 @@ from pusher import Pusher
 from application import app
 from flask import request, jsonify, session
 
+# DEV
 p = Pusher(
     app_id='79145',
     key='030e7fc986dac0c64bf4',
     secret='c1075e2abe140cc6aae2'
 )
+# PROD
+# p = Pusher(
+#     app_id='79145',
+#     key='4c332d566b401d2835d5',
+#     secret='cdfbcdc13194d6c29ecb'
+# )
 
 
 @app.route('/api/echo', methods=["GET", "POST"])
@@ -59,17 +66,14 @@ def emit_add_user(data):
 def emit_del_user(data):
     global num_users
 
-    session['username'] = data['username']
-    session['user_id'] = data['user_id']
-    session['channel'] = data['channel']
+    if 'username' in session:
+        num_users -= 1
 
-    num_users -= 1
-
-    emit('user_left', {
-        'username': session['username'],
-        'numUsers': num_users,
-        'user_id': session['user_id'],
-    }, broadcast=True)
+        emit('user_left', {
+            'username': session['username'],
+            'numUsers': num_users,
+            'user_id': session['user_id'],
+        }, broadcast=True)
 
 
 def emit_typing(data):
