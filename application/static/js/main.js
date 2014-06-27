@@ -8,6 +8,7 @@ var SocketBinder = function(id) {
       callbacks = {};
 
   function emit(action, data) {
+    data = data || {}
     data.action = action;
     data.channel = this.channel;
     $.post('/api/call', data);
@@ -118,7 +119,7 @@ $(function() {
         message: message
       });
       // tell server to execute 'new message' and send along one parameter
-      socket.emit('new message', {'message':message, 'user_id': user_id});
+      socket.emit('new_message', {'message':message, 'user_id': user_id});
     }
   }
 
@@ -215,7 +216,7 @@ $(function() {
         var typingTimer = (new Date()).getTime();
         var timeDiff = typingTimer - lastTypingTime;
         if (timeDiff >= TYPING_TIMER_LENGTH && typing) {
-          socket.emit('stop typing');
+          socket.emit('stop_typing');
           typing = false;
         }
       }, TYPING_TIMER_LENGTH);
@@ -252,7 +253,7 @@ $(function() {
     if (event.which === 13) {
       if (username) {
         sendMessage();
-        socket.emit('stop typing');
+        socket.emit('stop_typing');
         typing = false;
       } else {
         setUsername();
