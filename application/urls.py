@@ -10,9 +10,7 @@ from application import app
 from application import api
 
 
-
-
-## Error handlers
+# Error handlers
 # Handle 404 errors
 @app.errorhandler(404)
 def page_not_found(e):
