@@ -242,6 +242,14 @@ $(function() {
     return COLORS[index];
   }
 
+
+  // when user leave the page
+  window.onbeforeunload = function (e) {
+     socket.emit('del_user', {'username':username, 'user_id': user_id});
+
+  };
+
+
   // Keyboard events
 
   $window.keydown(function (event) {

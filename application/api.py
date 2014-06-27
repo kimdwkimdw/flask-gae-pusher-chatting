@@ -56,6 +56,22 @@ def emit_add_user(data):
     }, broadcast=True)
 
 
+def emit_del_user(data):
+    global num_users
+
+    session['username'] = data['username']
+    session['user_id'] = data['user_id']
+    session['channel'] = data['channel']
+
+    num_users -= 1
+
+    emit('user_left', {
+        'username': session['username'],
+        'numUsers': num_users,
+        'user_id': session['user_id'],
+    }, broadcast=True)
+
+
 def emit_typing(data):
     emit('typing', {
         'username': session['username'],
