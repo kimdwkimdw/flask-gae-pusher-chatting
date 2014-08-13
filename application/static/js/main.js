@@ -20,8 +20,7 @@ var SocketBinder = function(id) {
     }
   };
 
-  var pusher = new Pusher('030e7fc986dac0c64bf4'); /*dev*/
-  //var pusher = new Pusher('4c332d566b401d2835d5');   /*prod*/
+  var pusher = new Pusher(PUSHER_KEY);
   var channel = pusher.subscribe(id+"alksdjfajs");
   var broadcast = pusher.subscribe('br');
 
