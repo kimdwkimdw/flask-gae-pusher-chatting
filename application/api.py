@@ -4,7 +4,6 @@ from flask import request, jsonify, session
 from user_info import PUSHER_APP_ID, PUSHER_KEY, PUSHER_SECRET
 from werkzeug.security import generate_password_hash, \
     check_password_hash
-from sqlalchemy import desc
 from models import (
     User
 )
@@ -19,7 +18,7 @@ current_user = {}
 
 
 def mark_online(username):
-    print username
+    current_user[username] = 0
 
 
 @app.before_request
@@ -53,6 +52,24 @@ def api_call():
 
 
 def emit_add_user(data):
+    nickname = data['username']
+    password = "test"  # data['password']
+    user = User.query.get(nickname)
+
+    if user is None:
+        user = User(nickname=nickname,
+                    password=generate_password_hash(password)
+                    )
+
+        db.session.add(user)
+        db.session.commit()
+    elif not check_password_hash(user.password, password):
+        #wrong
+        #do nothing
+        return "error"
+    else:
+        pass
+
     session['username'] = data['username']
     session['user_id'] = data['user_id']
     session['channel'] = data['channel']
