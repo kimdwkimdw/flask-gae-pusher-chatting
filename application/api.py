@@ -1,19 +1,13 @@
 from pusher import Pusher
 from application import app
 from flask import request, jsonify, session
+from pusher_info import pusher_app_id, pusher_key, pusher_secret
 
-# DEV
 p = Pusher(
-    app_id='79145',
-    key='030e7fc986dac0c64bf4',
-    secret='c1075e2abe140cc6aae2'
+    app_id=pusher_app_id,
+    key=pusher_key,
+    secret=pusher_secret,
 )
-# PROD
-# p = Pusher(
-#     app_id='79145',
-#     key='4c332d566b401d2835d5',
-#     secret='cdfbcdc13194d6c29ecb'
-# )
 
 
 @app.route('/api/echo', methods=["GET", "POST"])
