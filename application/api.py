@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pusher import Pusher
 from application import app, db
 from flask import request, jsonify, session
@@ -7,6 +8,7 @@ from werkzeug.security import generate_password_hash, \
 from models import (
     User
 )
+import time
 
 p = Pusher(
     app_id=PUSHER_APP_ID,
@@ -14,11 +16,25 @@ p = Pusher(
     secret=PUSHER_SECRET,
 )
 
+'''
+사실 이런건 redis나 memcached로 해야하는데,
+instance 한개만 띄우니까 일단 상관은 없
+'''
 current_user = {}
 
 
+def get_number_of_current_user():
+    now = int(time.time())
+    for key in current_user.keys():
+        if now - current_user[key] > 10:
+            current_user.pop(key)
+
+    return len(current_user)
+
+
 def mark_online(username):
-    current_user[username] = 0
+    now = int(time.time())
+    current_user[username] = now
 
 
 @app.before_request
@@ -77,19 +93,18 @@ def api_trylogin():
     session['user_id'] = data['user_id']
     session['channel'] = data['channel']
 
-    current_user[data['username']] = data['user_id']
-    print current_user
+    current_user[data['username']] = int(time.time())
 
     # WTF user joined fail...
     emit('user_joined', {
         'username': session['username'],
-        'numUsers': len(current_user),
+        'numUsers': get_number_of_current_user(),
         'user_id': session['user_id'],
     }, broadcast=True)
 
     return jsonify({
         'status': 0,
-        'numUsers': len(current_user),
+        'numUsers': get_number_of_current_user(),
         'user_id': session['user_id'],
     })
 
@@ -101,7 +116,7 @@ def emit_del_user(data):
 
         emit('user_left', {
             'username': session['username'],
-            'numUsers': len(current_user),
+            'numUsers': get_number_of_current_user(),
             'user_id': session['user_id'],
         }, broadcast=True)
 
