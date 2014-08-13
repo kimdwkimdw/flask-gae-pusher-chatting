@@ -1,10 +1,8 @@
 application: global-justice-298
-version: 3
+version: 4
 runtime: python27
 api_version: 1
 threadsafe: true
-
-default_expiration: "5d"
 
 builtins:
 - appstats: on
@@ -18,8 +16,6 @@ libraries:
 - name: markupsafe
   version: "0.15"
 
-inbound_services:
-- warmup
 
 handlers:
 - url: /favicon.ico
@@ -30,12 +26,6 @@ handlers:
   static_files: application/static/robots.txt
   upload: application/static/robots.txt
 
-- url: /gae_mini_profiler/static
-  static_dir: lib/gae_mini_profiler/static
-
-- url: /gae_mini_profiler/.*
-  script: lib.gae_mini_profiler.main.application
-
 - url: /static
   static_dir: application/static
 
@@ -44,4 +34,4 @@ handlers:
   upload: index.html
 
 - url: .*
-  script: run.application.app
+  script: application.app
