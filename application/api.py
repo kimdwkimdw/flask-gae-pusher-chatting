@@ -1,7 +1,13 @@
 from pusher import Pusher
-from application import app
+from application import app, db
 from flask import request, jsonify, session
-from pusher_info import PUSHER_APP_ID, PUSHER_KEY, PUSHER_SECRET
+from user_info import PUSHER_APP_ID, PUSHER_KEY, PUSHER_SECRET
+from werkzeug.security import generate_password_hash, \
+    check_password_hash
+from sqlalchemy import desc
+from models import (
+    User
+)
 
 p = Pusher(
     app_id=PUSHER_APP_ID,
@@ -9,15 +15,24 @@ p = Pusher(
     secret=PUSHER_SECRET,
 )
 
+current_user = {}
+
+
+def mark_online(username):
+    print username
+
+
+@app.before_request
+def mark_current_user_online():
+    if 'username' in session:
+        mark_online(session['username'])
+
 
 @app.route('/api/echo', methods=["GET", "POST"])
 def test_message():
     data = request.form
     p['test_channel'].trigger('echo', {'message': data['message']})
     return jsonify({"status": 0})
-
-
-num_users = 0
 
 
 def emit(action, data, broadcast=False):
@@ -38,34 +53,33 @@ def api_call():
 
 
 def emit_add_user(data):
-    global num_users
     session['username'] = data['username']
     session['user_id'] = data['user_id']
     session['channel'] = data['channel']
-    num_users += 1
+    current_user[data['username']] = data['user_id']
+    print current_user
 
     emit('login', {
-        'numUsers': num_users,
+        'numUsers': len(current_user),
         'user_id': session['user_id'],
     })
 
     # WTF user joined fail...
     emit('user_joined', {
         'username': session['username'],
-        'numUsers': num_users,
+        'numUsers': len(current_user),
         'user_id': session['user_id'],
     }, broadcast=True)
 
 
 def emit_del_user(data):
-    global num_users
-
     if 'username' in session:
-        num_users -= 1
+        if session['username'] in current_user:
+            current_user.pop(session['username'])
 
         emit('user_left', {
             'username': session['username'],
-            'numUsers': num_users,
+            'numUsers': len(current_user),
             'user_id': session['user_id'],
         }, broadcast=True)
 

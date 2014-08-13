@@ -16,6 +16,7 @@ from application import api
 def page_not_found(e):
     return render_template('404.html'), 404
 
+
 # Handle 500 errors
 @app.errorhandler(500)
 def server_error(e):
