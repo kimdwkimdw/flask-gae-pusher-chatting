@@ -42,7 +42,7 @@ def emit(action, data, broadcast=False):
         p[session['channel']].trigger(action, data)
 
 
-@app.route('/api/call', methods=["GET", "POST"])
+@app.route('/api/call', methods=["POST"])
 def api_call():
     data = request.form
     action_name = data["action"]
@@ -51,9 +51,11 @@ def api_call():
     return jsonify({"status": 0})
 
 
-def emit_add_user(data):
+@app.route('/api/trylogin', methods=["POST"])
+def api_trylogin():
+    data = request.form
     nickname = data['username']
-    password = "test"  # data['password']
+    password = data['password']
     user = User.query.get(nickname)
 
     if user is None:
@@ -64,22 +66,19 @@ def emit_add_user(data):
         db.session.add(user)
         db.session.commit()
     elif not check_password_hash(user.password, password):
-        #wrong
-        #do nothing
-        return "error"
+        # wrong
+        # do nothing
+        return jsonify({'status': -1})
     else:
+        print "user found"
         pass
 
     session['username'] = data['username']
     session['user_id'] = data['user_id']
     session['channel'] = data['channel']
+
     current_user[data['username']] = data['user_id']
     print current_user
-
-    emit('login', {
-        'numUsers': len(current_user),
-        'user_id': session['user_id'],
-    })
 
     # WTF user joined fail...
     emit('user_joined', {
@@ -87,6 +86,12 @@ def emit_add_user(data):
         'numUsers': len(current_user),
         'user_id': session['user_id'],
     }, broadcast=True)
+
+    return jsonify({
+        'status': 0,
+        'numUsers': len(current_user),
+        'user_id': session['user_id'],
+    })
 
 
 def emit_del_user(data):

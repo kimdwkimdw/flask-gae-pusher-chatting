@@ -24,10 +24,6 @@ var SocketBinder = function(id) {
   //var pusher = new Pusher('4c332d566b401d2835d5');   /*prod*/
   var channel = pusher.subscribe(id+"alksdjfajs");
   var broadcast = pusher.subscribe('br');
-  
-  channel.bind('login', function(data) {
-    console.log(data);
-  });
 
   pusher.bind_all(function(e, data) {
     callbacks[e](data);
@@ -49,13 +45,14 @@ $(function() {
   ];
 
   // Initialize varibles
-  var $window = $(window);
-  var $usernameInput = $('.usernameInput'); // Input for username
-  var $messages = $('.messages'); // Messages area
-  var $inputMessage = $('.inputMessage'); // Input message input box
+  var $window = $(window),
+      $usernameInput = $('.usernameInput[name=username]'), // Input for username
+      $passwordInput = $('.usernameInput[name=password]'), // Input for username
+      $messages = $('.messages'), // Messages area
+      $inputMessage = $('.inputMessage'), // Input message input box
 
-  var $loginPage = $('.login.page'); // The login page
-  var $chatPage = $('.chat.page'); // The chatroom page
+      $loginPage = $('.login.page'), // The login page
+      $chatPage = $('.chat.page'); // The chatroom page
 
   // Prompt for setting a username
   var username;
@@ -88,17 +85,42 @@ $(function() {
 
   // Sets the client's username
   function setUsername () {
-    username = cleanInput($usernameInput.val().trim());
+    var __username = cleanInput($usernameInput.val().trim());
+    var __password = cleanInput($passwordInput.val().trim());
 
     // If the username is valid
-    if (username) {
-      $loginPage.fadeOut();
-      $chatPage.show();
-      $loginPage.off('click');
-      $currentInput = $inputMessage.focus();
-
+    if (__username && __password) {
       // Tell the server your username
-      socket.emit('add_user', {'username':username, 'user_id': user_id});
+      $.ajax({
+        type: "POST",
+        url: "/api/trylogin",
+        data: {'username':__username, 'password':__password, 'user_id': user_id,
+        'channel': socket.channel},
+        success: function(data) {
+          console.log(data)
+
+          if (data.status==0) {
+            username = __username;
+            $loginPage.fadeOut();
+            $chatPage.show();
+            $loginPage.off('click');
+            $currentInput = $inputMessage.focus();
+
+            connected = true;
+            // Display the welcome message
+            var message = "Welcome to Chat &mdash; ";
+            log(message, {
+              prepend: true
+            });
+            addParticipantsMessage(data);
+          } else {
+            alert("login fail: pasword wrong")
+          }
+        },
+        dataType: "json"
+      });
+    } else {
+      alert("not valid")
     }
   }
 
@@ -249,10 +271,6 @@ $(function() {
   // Keyboard events
 
   $window.keydown(function (event) {
-    // Auto-focus the current input when a key is typed
-    if (!(event.ctrlKey || event.metaKey || event.altKey)) {
-      $currentInput.focus();
-    }
     // When the client hits ENTER on their keyboard
     if (event.which === 13) {
       if (username) {
@@ -269,31 +287,7 @@ $(function() {
     updateTyping();
   });
 
-  // Click events
-
-  // Focus input when clicking anywhere on login page
-  $loginPage.click(function () {
-    $currentInput.focus();
-  });
-
-  // Focus input when clicking on the message input's border
-  $inputMessage.click(function () {
-    $inputMessage.focus();
-  });
-
   // Socket events
-
-  // Whenever the server emits 'login', log the login message
-  socket.on('login', function (data) {
-    connected = true;
-    // Display the welcome message
-    var message = "Welcome to Chat &mdash; ";
-    log(message, {
-      prepend: true
-    });
-    addParticipantsMessage(data);
-  });
-
   // Whenever the server emits 'new message', update the chat body
   socket.on('new_message', function (data) {
     if (data['user_id']==user_id) return;
