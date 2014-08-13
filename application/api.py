@@ -1,12 +1,12 @@
 from pusher import Pusher
 from application import app
 from flask import request, jsonify, session
-from pusher_info import pusher_app_id, pusher_key, pusher_secret
+from pusher_info import PUSHER_APP_ID, PUSHER_KEY, PUSHER_SECRET
 
 p = Pusher(
-    app_id=pusher_app_id,
-    key=pusher_key,
-    secret=pusher_secret,
+    app_id=PUSHER_APP_ID,
+    key=PUSHER_KEY,
+    secret=PUSHER_SECRET,
 )
 
 

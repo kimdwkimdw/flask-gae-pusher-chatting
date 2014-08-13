@@ -3,14 +3,14 @@ settings.py
 
 Configuration for Flask app
 
-Important: Place your keys in the secret_keys.py module, 
+Important: Place your keys in the secret_keys.py module,
            which should be kept out of version control.
 
 """
 
-import os
-
 from secret_keys import CSRF_SECRET_KEY, SESSION_KEY
+from user_info import ADMIN_EMAIL, ADMIN_DB_URI
+
 
 class Config(object):
     # Set secret keys for CSRF protection
@@ -19,18 +19,10 @@ class Config(object):
     # Flask-Cache settings
     CACHE_TYPE = 'gaememcached'
 
-class Development(Config):
-    DEBUG = True
-    # Flask-DebugToolbar settings
-    DEBUG_TB_PROFILER_ENABLED = True
-    DEBUG_TB_INTERCEPT_REDIRECTS = False
-    CSRF_ENABLED = True
-
-class Testing(Config):
-    TESTING = True
-    DEBUG = True
-    CSRF_ENABLED = True
 
 class Production(Config):
     DEBUG = False
-    CSRF_ENABLED = True
+    CSRF_ENABLED = False
+    ADMIN = ADMIN_EMAIL
+    SQLALCHEMY_DATABASE_URI = ADMIN_DB_URI
+    migration_directory = 'migrations'
