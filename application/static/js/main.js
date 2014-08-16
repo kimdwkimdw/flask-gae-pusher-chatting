@@ -4,9 +4,8 @@ var SocketBinder = function(id) {
 
   function emit(action, data) {
     data = data || {}
-    data.action = action;
     data.channel = this.channel;
-    $.post('/api/call', data);
+    $.post('/api/call/'+action, data);
   }
 
   function on(e, f) {
@@ -25,7 +24,12 @@ var SocketBinder = function(id) {
   var broadcast = pusher.subscribe('br');
 
   pusher.bind_all(function(e, data) {
-    callbacks[e](data);
+    if (e=="pong")
+    {
+      //default event
+    } else {
+      callbacks[e](data);  
+    }
   });
 
   obj.emit = emit;

@@ -58,11 +58,16 @@ def emit(action, data, broadcast=False):
         p[session['channel']].trigger(action, data)
 
 
-@app.route('/api/call', methods=["POST"])
-def api_call():
+@app.route('/api/call/<action_name>', methods=["POST"])
+def api_call(action_name):
     data = request.form
-    action_name = data["action"]
-    eval("emit_" + action_name + "(data)")
+    methodname_to_call = "emit_" + action_name
+
+    if methodname_to_call in globals():
+        method_to_call = globals()[methodname_to_call]
+        result = method_to_call(data)
+    else:
+        return jsonify({"status": -1, "message": "unknown action_name"})
 
     return jsonify({"status": 0})
 
@@ -72,6 +77,7 @@ def api_trylogin():
     data = request.form
     nickname = data['username']
     password = data['password']
+
     user = User.query.get(nickname)
 
     if user is None:
@@ -87,7 +93,6 @@ def api_trylogin():
         return jsonify({'status': -1})
     else:
         print "user found"
-        pass
 
     session['username'] = data['username']
     session['user_id'] = data['user_id']
