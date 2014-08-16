@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from pusher import Pusher
 from application import app, db
-from flask import request, jsonify, session
+from flask import g, request, jsonify, session
 from user_info import PUSHER_APP_ID, PUSHER_KEY, PUSHER_SECRET
 from werkzeug.security import generate_password_hash, \
     check_password_hash
@@ -9,6 +9,7 @@ from models import (
     User
 )
 import time
+from functools import wraps
 
 p = Pusher(
     app_id=PUSHER_APP_ID,
@@ -21,6 +22,15 @@ p = Pusher(
 instance 한개만 띄우니까 일단 상관은 없
 '''
 current_user = {}
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if g.user is None:
+            return jsonify({"status": -1, "message": "not logged in"})
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 def get_number_of_current_user():
@@ -39,8 +49,10 @@ def mark_online(username):
 
 @app.before_request
 def mark_current_user_online():
+    g.user = None
     if 'username' in session:
         mark_online(session['username'])
+        g.user = session['username']
 
 
 @app.route('/api/echo', methods=["GET", "POST"])
@@ -59,6 +71,7 @@ def emit(action, data, broadcast=False):
 
 
 @app.route('/api/call/<action_name>', methods=["POST"])
+@login_required
 def api_call(action_name):
     data = request.form
     methodname_to_call = "emit_" + action_name
