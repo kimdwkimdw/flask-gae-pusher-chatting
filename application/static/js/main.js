@@ -1,42 +1,9 @@
-var SocketBinder = function(id) {
-  var obj = {},
-      callbacks = {};
-
-  function emit(action, data) {
-    data = data || {}
-    data.channel = this.channel;
-    $.post('/api/call/'+action, data);
+// Enable pusher logging - don't include this in production
+Pusher.log = function(message) {
+  if (window.console && window.console.log) {
+    window.console.log(message);
   }
-
-  function on(e, f) {
-    callbacks[e] = f;
-  }
-
-  // Enable pusher logging - don't include this in production
-  Pusher.log = function(message) {
-    if (window.console && window.console.log) {
-      window.console.log(message);
-    }
-  };
-
-  var pusher = new Pusher(PUSHER_KEY);
-  var channel = pusher.subscribe(id+"alksdjfajs");
-  var broadcast = pusher.subscribe('br');
-
-  pusher.bind_all(function(e, data) {
-    if (e=="pong")
-    {
-      //default event
-    } else {
-      callbacks[e](data);  
-    }
-  });
-
-  obj.emit = emit;
-  obj.on = on;
-  obj.channel = id+"alksdjfajs";
-  return obj;
-}
+};
 
 $(function() {
   var FADE_TIME = 150; // ms
@@ -75,7 +42,10 @@ $(function() {
         return text;
     })();
 
-  var socket = SocketBinder(user_id);
+  var pusher = new Pusher(PUSHER_KEY);
+  var broadcast = pusher.subscribe('br');
+
+
   function addParticipantsMessage (data) {
     var message = '';
     if (data.numUsers === 1) {
@@ -98,7 +68,7 @@ $(function() {
         type: "POST",
         url: "/api/trylogin",
         data: {'username':__username, 'password':__password, 'user_id': user_id,
-        'channel': socket.channel},
+        'channel': user_id + user_id},
         success: function(data) {
           console.log(data)
 
@@ -140,7 +110,7 @@ $(function() {
         message: message
       });
       // tell server to execute 'new message' and send along one parameter
-      socket.emit('new_message', {'message':message, 'user_id': user_id});
+      $.post('/api/call/new_message', {'message':message, 'user_id': user_id});
     }
   }
 
@@ -229,7 +199,7 @@ $(function() {
     if (connected) {
       if (!typing) {
         typing = true;
-        socket.emit('typing');
+        $.post('/api/call/typing');
       }
       lastTypingTime = (new Date()).getTime();
 
@@ -237,7 +207,7 @@ $(function() {
         var typingTimer = (new Date()).getTime();
         var timeDiff = typingTimer - lastTypingTime;
         if (timeDiff >= TYPING_TIMER_LENGTH && typing) {
-          socket.emit('stop_typing');
+          $.post('/api/call/stop_typing');
           typing = false;
         }
       }, TYPING_TIMER_LENGTH);
@@ -266,8 +236,7 @@ $(function() {
 
   // when user leave the page
   window.onbeforeunload = function (e) {
-     socket.emit('del_user', {'username':username, 'user_id': user_id});
-
+    $.post('/api/call/del_user');
   };
 
 
@@ -278,7 +247,7 @@ $(function() {
     if (event.which === 13) {
       if (username) {
         sendMessage();
-        socket.emit('stop_typing');
+        $.post('/api/call/stop_typing');
         typing = false;
       } else {
         setUsername();
@@ -292,20 +261,20 @@ $(function() {
 
   // Socket events
   // Whenever the server emits 'new message', update the chat body
-  socket.on('new_message', function (data) {
+  broadcast.bind('new_message', function (data) {
     if (data['user_id']==user_id) return;
     addChatMessage(data);
   });
 
   // Whenever the server emits 'user joined', log it in the chat body
-  socket.on('user_joined', function (data) {
+  broadcast.bind('user_joined', function (data) {
     if (data['user_id']==user_id) return;
     log(data.username + ' joined');
     addParticipantsMessage(data);
   });
 
   // Whenever the server emits 'user left', log it in the chat body
-  socket.on('user_left', function (data) {
+  broadcast.bind('user_left', function (data) {
     if (data['user_id']==user_id) return;
     log(data.username + ' left');
     addParticipantsMessage(data);
@@ -313,13 +282,13 @@ $(function() {
   });
 
   // Whenever the server emits 'typing', show the typing message
-  socket.on('typing', function (data) {
+  broadcast.bind('typing', function (data) {
     if (data['user_id']==user_id) return;
     addChatTyping(data);
   });
 
   // Whenever the server emits 'stop typing', kill the typing message
-  socket.on('stop_typing', function (data) {
+  broadcast.bind('stop_typing', function (data) {
     if (data['user_id']==user_id) return;
     removeChatTyping(data);
   });
