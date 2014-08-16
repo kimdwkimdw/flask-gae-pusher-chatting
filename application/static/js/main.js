@@ -58,8 +58,8 @@ $(function() {
 
   // Sets the client's username
   function setUsername () {
-    var __username = cleanInput($usernameInput.val().trim());
-    var __password = cleanInput($passwordInput.val().trim());
+    var __username = $usernameInput.val().trim();
+    var __password = $passwordInput.val().trim();
 
     // If the username is valid
     if (__username && __password) {
@@ -100,8 +100,7 @@ $(function() {
   // Sends a chat message
   function sendMessage () {
     var message = $inputMessage.val();
-    // Prevent markup from being injected into the message
-    message = cleanInput(message);
+    
     // if there is a non-empty message and a socket connection
     if (message && connected) {
       $inputMessage.val('');
@@ -130,16 +129,18 @@ $(function() {
       $typingMessages.remove();
     }
 
-    var colorStyle = 'style="color:' + getUsernameColor(data.username) + '"';
-    var usernameDiv = '<span class="username"' + colorStyle + '>' +
-      cleanInput(data.username) + '</span>';
-    var messageBodyDiv = '<span class="messageBody">' +
-      cleanInput(data.message) + '</span>';
+    var $usernameDiv = $('<span class="username"></span>');
+    $usernameDiv.css("color", getUsernameColor(data.username));
+    $usernameDiv.text(data.username);
+
+    var $messageBodyDiv = $('<span class="messageBody"></span>');
+    $messageBodyDiv.text(data.message);
 
     var typingClass = data.typing ? 'typing' : '';
-    var messageDiv = '<li class="message ' + typingClass + '">' +
-    usernameDiv + messageBodyDiv + '</li>';
-    var $messageDiv = $(messageDiv).data('username', data.username);
+    var $messageDiv = $('<li class="message ' + typingClass + '"></li>');
+    $messageDiv.append($usernameDiv)
+        .append($messageBodyDiv)
+        .data('username', data.username);
 
     addMessageElement($messageDiv, options);
   }
@@ -189,11 +190,6 @@ $(function() {
     $messages[0].scrollTop = $messages[0].scrollHeight;
   }
 
-  // Prevents input from having injected markup
-  function cleanInput (input) {
-    return $('<div/>').text(input).html() || input;
-  }
-
   // Updates the typing event
   function updateTyping () {
     if (connected) {
@@ -237,6 +233,7 @@ $(function() {
   // when user leave the page
   window.onbeforeunload = function (e) {
     $.post('/api/call/del_user');
+    pusher.unsubscribe("br");
   };
 
 
